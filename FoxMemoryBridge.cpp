@@ -2,18 +2,15 @@
 #include <windows.h>
 #include <reshade.hpp>
 
-// هدر رسمی ری‌شید برای ارتباط با موتور رندر
 using namespace reshade::api;
 
-// آفست‌های استخراج شده از کد سایدر شما
 const uintptr_t BASE_OFFSET = 0x037F89E0;
 const uintptr_t NEW_BASE_OFFSET = 0x036F0260;
 
-// تابع کمکی برای خواندن امن حافظه جهت جلوگیری از کرش بازی (Crash to Desktop)
 template <typename T>
 T SafeRead(uintptr_t address, T defaultValue = T()) {
     __try {
-        if (address < 0x10000 || address > 0x7FFFFFFFEFFF) return defaultValue; // محدوده امن مموری ۶۴ بیتی
+        if (address < 0x10000 || address > 0x7FFFFFFFEFFF) return defaultValue;
         return *reinterpret_cast<T*>(address);
     }
     __except (EXCEPTION_EXECUTE_HANDLER) {
@@ -21,34 +18,33 @@ T SafeRead(uintptr_t address, T defaultValue = T()) {
     }
 }
 
-// این تابع در هر فریم (موقع رندر شدن افکت‌های ری‌شید) اجرا می‌شود
-static void on_reshade_present(effect_runtime *runtime)
+// سینتکس آپدیت شده مخصوص ReShade جدید
+static void on_present(command_queue *queue, swapchain *swapchain, const rect *source_rect, const rect *dest_rect, uint32_t dirty_rect_count, const rect *dirty_rects)
 {
-    // دریافت آدرس پایه بازی در حال اجرا (مثل pes2021.exe) که جایگزین 0x140000000 ثابت می‌شود
+    // دریافت effect_runtime از طریق swapchain
+    effect_runtime *runtime = static_cast<effect_runtime*>(swapchain);
     uintptr_t baseAddress = reinterpret_cast<uintptr_t>(GetModuleHandle(nullptr));
 
-    // ---- پوینتر اول: مقدار چرخش دوربین ----
+    // پوینتر اول
     uintptr_t ptr1 = SafeRead<uintptr_t>(baseAddress + BASE_OFFSET);
     if (ptr1) ptr1 = SafeRead<uintptr_t>(ptr1 + 0x138);
     if (ptr1) ptr1 = SafeRead<uintptr_t>(ptr1 + 0x20);
     if (ptr1) ptr1 = SafeRead<uintptr_t>(ptr1 + 0x8);
-    float liveRotation = ptr1 ? SafeRead<float>(ptr1 + 0xC) : -999.0f; // اگر لود نشده باشد -999 می‌دهد
+    float liveRotation = ptr1 ? SafeRead<float>(ptr1 + 0xC) : -999.0f;
 
-    // ---- پوینتر دوم: مقدار پوینتر جدید ----
+    // پوینتر دوم
     uintptr_t ptr2 = SafeRead<uintptr_t>(baseAddress + NEW_BASE_OFFSET);
     if (ptr2) ptr2 = SafeRead<uintptr_t>(ptr2 + 0x138);
     if (ptr2) ptr2 = SafeRead<uintptr_t>(ptr2 + 0x20);
     if (ptr2) ptr2 = SafeRead<uintptr_t>(ptr2 + 0x8);
     float liveNewValue = ptr2 ? SafeRead<float>(ptr2 + 0x10) : -999.0f;
 
-    // ---- تزریق مستقیم به متغیرهای شیدر ری‌شید ----
+    // تزریق مقادیر به شیدر
     runtime->set_uniform_value_float(runtime->find_uniform_variable(nullptr, "uLiveRotation"), liveRotation);
     runtime->set_uniform_value_float(runtime->find_uniform_variable(nullptr, "uLiveNewValue"), liveNewValue);
 }
 
-// معرفی مشخصات افزونه به ری‌شید برای نمایش در منوی بازی
-extern "C" __declspec(dllexport) const char *NAME = "Fox Memory Bridge";
-extern "C" __declspec(dllexport) const char *DESCRIPTION = "Bridges Fox Engine memory values to ReShade uniforms.";
+extern "C" __declspec(dllexport) const char *GetReShadeVersion() { return RESHADE_API_VERSION_STRING; }
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 {
@@ -57,8 +53,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
     case DLL_PROCESS_ATTACH:
         if (!reshade::register_addon(hinstDLL))
             return FALSE;
-        // ثبت رویداد مخصوص تزریق متغیرها به شیدر
-        reshade::register_event<reshade::addon_event::reshade_present>(on_reshade_present);
+        reshade::register_event<reshade::api::event_id::present>(on_present);
         break;
     case DLL_PROCESS_DETACH:
         reshade::unregister_addon(hinstDLL);
