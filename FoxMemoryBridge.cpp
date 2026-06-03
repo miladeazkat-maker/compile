@@ -22,7 +22,7 @@ T SafeRead(uintptr_t address, T defaultValue = T()) {
 }
 
 // این تابع در هر فریم (موقع رندر Present) اجرا می‌شود
-static void on_present(effect_runtime *runtime)
+static void on_present(command_queue *queue, effect_runtime *runtime)
 {
     // دریافت آدرس پایه بازی در حال اجرا (مثل pes2021.exe) که جایگزین 0x140000000 ثابت می‌شود
     uintptr_t baseAddress = reinterpret_cast<uintptr_t>(GetModuleHandle(nullptr));
@@ -47,8 +47,9 @@ static void on_present(effect_runtime *runtime)
     runtime->set_uniform_value_float(runtime->find_uniform_variable(nullptr, "uLiveNewValue"), liveNewValue);
 }
 
-// معرفی نسخه افزونه به ری‌شید
-extern "C" __declspec(dllexport) const char *GetReShadeVersion() { return RESHADE_API_VERSION_STRING; }
+// معرفی مشخصات افزونه به ری‌شید برای نمایش در منوی بازی
+extern "C" __declspec(dllexport) const char *NAME = "Fox Memory Bridge";
+extern "C" __declspec(dllexport) const char *DESCRIPTION = "Bridges Fox Engine memory values to ReShade uniforms.";
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 {
@@ -57,8 +58,8 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
     case DLL_PROCESS_ATTACH:
         if (!reshade::register_addon(hinstDLL))
             return FALSE;
-        // ثبت رویداد برای اجرا در هر فریم
-        reshade::register_event<reshade::api::event_id::present>(on_present);
+        // ثبت رویداد برای اجرا در هر فریم بر اساس داکیومنت جدید ری‌شید
+        reshade::register_event<reshade::addon_event::present>(on_present);
         break;
     case DLL_PROCESS_DETACH:
         reshade::unregister_addon(hinstDLL);
