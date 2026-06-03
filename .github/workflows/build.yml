@@ -12,11 +12,10 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
 
       - name: Download All ReShade Headers Automatically
-        shell: powershell
         run: |
-          curl -sL https://raw.githubusercontent.com/crosire/reshade/main/include/reshade.hpp -o reshade.hpp
-          curl -sL https://raw.githubusercontent.com/crosire/reshade/main/include/reshade_events.hpp -o reshade_events.hpp
-          curl -sL https://raw.githubusercontent.com/crosire/reshade/main/include/reshade_overlay.hpp -o reshade_overlay.hpp
+          curl.exe -sL https://raw.githubusercontent.com/crosire/reshade/main/include/reshade.hpp -o reshade.hpp
+          curl.exe -sL https://raw.githubusercontent.com/crosire/reshade/main/include/reshade_events.hpp -o reshade_events.hpp
+          curl.exe -sL https://raw.githubusercontent.com/crosire/reshade/main/include/reshade_overlay.hpp -o reshade_overlay.hpp
 
       - name: Compile Addon
         run: |
