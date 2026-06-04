@@ -1,22 +1,35 @@
-name: Build ReShade Addon
-on: [push, workflow_dispatch]
+name: Build Custom ReShade Unified Addon
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
 jobs:
   build:
     runs-on: windows-latest
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
 
-      - name: Setup MSVC Compiler
-        uses: ilammy/msvc-dev-cmd@v1
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v2
 
-      - name: Compile Addon
-        run: |
-          cl.exe /O2 /LD /EHsc /std:c++17 /I. FoxMemoryBridge.cpp /link /OUT:FoxBridge.addon user32.lib kernel32.lib
+    - name: Configure Developer Command Prompt for VC
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: FoxBridge-Addon
-          path: FoxBridge.addon
+    - name: Compile Unified Addon DLL
+      run: |
+        cl.exe /O2 /LD /std:c++17 /I"./include" /I"./deps/imgui" addon_var.cpp /link /OUT:VAR_Offside_System.addon /SUBSYSTEM:WINDOWS /MACHINE:X64 User32.lib Gd32.lib
+
+    - name: Upload Compiled Addon Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: PES2021-VAR-Addon
+        path: VAR_Offside_System.addon
