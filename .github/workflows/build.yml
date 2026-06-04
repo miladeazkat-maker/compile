@@ -1,4 +1,4 @@
-name: Build Custom ReShade Unified Addon
+name: Build Custom ReShade Addon (v6.7.3)
 
 on:
   push:
@@ -13,23 +13,18 @@ jobs:
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
-      with:
-        submodules: recursive
 
-    - name: Add MSBuild to PATH
-      uses: microsoft/setup-msbuild@v2
-
-    - name: Configure Developer Command Prompt for VC
+    - name: Configure Developer Command Prompt for VC (x64)
       uses: ilammy/msvc-dev-cmd@v1
       with:
         arch: x64
 
-    - name: Compile Unified Addon DLL
+    - name: Compile Addon using MSVC
       run: |
-        cl.exe /O2 /LD /std:c++17 /I"./include" /I"./deps/imgui" addon_var.cpp /link /OUT:VAR_Offside_System.addon /SUBSYSTEM:WINDOWS /MACHINE:X64 User32.lib Gd32.lib
+        cl.exe /O2 /LD /std:c++17 /I. /D "NDEBUG" addon_var.cpp /link /OUT:VAR_Offside_System.addon /SUBSYSTEM:WINDOWS /MACHINE:X64 user32.lib gdi32.lib
 
     - name: Upload Compiled Addon Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: PES2021-VAR-Addon
+        name: PES2021-VAR-Addon-v6.7.3
         path: VAR_Offside_System.addon
