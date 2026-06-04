@@ -23,6 +23,16 @@ jobs:
       run: |
         git clone --depth 1 https://github.com/ocornut/imgui.git imgui
 
+    - name: Patch ReShade API Version to Match 6.7.3 (API 18)
+      shell: pwsh
+      run: |
+        if (Test-Path "reshade.hpp") {
+          (Get-Content reshade.hpp) -replace '#define RESHADE_API_VERSION \d+', '#define RESHADE_API_VERSION 18' | Set-Content reshade.hpp
+          Write-Host "Successfully patched reshade.hpp to API Version 18"
+        } else {
+          Write-Host "reshade.hpp not found in root directory!"
+        }
+
     - name: Compile Addon using MSVC
       run: |
         cl.exe /O2 /LD /std:c++17 /I. /Iimgui /D "NDEBUG" addon_var.cpp imgui/imgui.cpp imgui/imgui_draw.cpp imgui/imgui_widgets.cpp imgui/imgui_tables.cpp /link /OUT:VAR_Offside_System.addon /SUBSYSTEM:WINDOWS /MACHINE:X64 user32.lib gdi32.lib
