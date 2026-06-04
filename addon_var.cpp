@@ -17,7 +17,7 @@ int current_view_idx = 0; // 0: View 1, 1: View 2, 2: View 3, 3: View 4, 4: Cust
 float plane_position = 0.5f;
 bool enable_plane = true;
 
-// هندل‌های متغیرهای یونيفورم شیدر ریشید
+// هندل‌های متغیرهای یونيدورم شیدر ریشید
 reshade::api::effect_uniform_variable uniform_uCameraView = { 0 };
 reshade::api::effect_uniform_variable uniform_uTargetDepth = { 0 };
 reshade::api::effect_uniform_variable uniform_uShowPlane = { 0 };
@@ -103,7 +103,9 @@ void SyncUniformsWithReshade(reshade::api::effect_runtime* runtime) {
 void LocateShaderUniforms(reshade::api::effect_runtime* runtime) {
     runtime->enumerate_uniform_variables(nullptr, [](reshade::api::effect_runtime* rt, reshade::api::effect_uniform_variable variable) {
         char name[64] = "";
-        rt->get_uniform_variable_name(variable, name, sizeof(name));
+        // در نسخه 6.x ریشید، پاس دادن آرایه به صورت تک‌مرحله‌ای سایز را خودکار ددیکیت می‌کند
+        rt->get_uniform_variable_name(variable, name); 
+        
         if (strcmp(name, "uCameraView") == 0) uniform_uCameraView = variable;
         else if (strcmp(name, "uTargetDepth") == 0) uniform_uTargetDepth = variable;
         else if (strcmp(name, "uShowPlane") == 0) uniform_uShowPlane = variable;
@@ -122,7 +124,7 @@ static void OnDrawOverlay(reshade::api::effect_runtime* runtime) {
     // استایل‌دهی شیک و گیمینگ به منوی اختصاصی
     ImGui::SetNextWindowSize(ImVec2(400, 320), ImGuiCond_FirstUseEver);
     ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.08f, 0.09f, 0.12f, 0.95f));
-    ImGui::PushStyleColor(ImGuiCol_TitleBgActive, ImVec4(0.15f, 0.40f, 0.20f, 1.00f)); // تم سبز فوتبالی برای هدر
+    ImGui::PushStyleColor(ImGuiCol_TitleBgActive, ImVec4(0.15f, 0.40f, 0.20f, 1.00f)); // تم سبز برای هدر
 
     if (ImGui::Begin("⚽ SAOT & VAR CENTRAL CONTROL PANEL", &is_menu_open, ImGuiWindowFlags_NoCollapse)) {
         LocateShaderUniforms(runtime);
