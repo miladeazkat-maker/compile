@@ -19,9 +19,13 @@ jobs:
       with:
         arch: x64
 
+    - name: Download ImGui Dependencies Automatically
+      run: |
+        git clone --depth 1 https://github.com/ocornut/imgui.git imgui
+
     - name: Compile Addon using MSVC
       run: |
-        cl.exe /O2 /LD /std:c++17 /I. /D "NDEBUG" addon_var.cpp /link /OUT:VAR_Offside_System.addon /SUBSYSTEM:WINDOWS /MACHINE:X64 user32.lib gdi32.lib
+        cl.exe /O2 /LD /std:c++17 /I. /Iimgui /D "NDEBUG" addon_var.cpp /link /OUT:VAR_Offside_System.addon /SUBSYSTEM:WINDOWS /MACHINE:X64 user32.lib gdi32.lib
 
     - name: Upload Compiled Addon Artifact
       uses: actions/upload-artifact@v4
